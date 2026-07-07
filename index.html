@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1E2A4A;
+    --navy-light: #2C3D66;
+    --brass: #C89B3C;
+    --cream: #F7F6F3;
+    --sage: #4F7942;
+    --coral: #C5533C;
+    --line: #E3E0D8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cream);
+    margin: 0;
+    color: var(--navy);
+    min-height: 100vh;
+  }
+  .app { max-width: 640px; margin: 0 auto; padding: 24px 18px 60px; }
+
+  /* Progress trail */
+  .trail { display: flex; gap: 6px; margin-bottom: 28px; }
+  .trail div { flex: 1; height: 4px; border-radius: 2px; background: var(--line); transition: 0.3s; }
+  .trail div.done { background: var(--brass); }
+
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; margin: 0 0 4px; }
+  .sub { color: #6b6b6b; font-size: 14px; margin-bottom: 24px; }
+
+  .step { display: none; animation: fadeIn 0.35s ease; }
+  .step.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: none; } }
+
+  /* Email step */
+  .card {
+    background: white; border: 1px solid var(--line); border-radius: 14px;
+    padding: 28px 22px;
+  }
+  input[type=email] {
+    width: 100%; padding: 14px 16px; font-size: 16px; border: 1.5px solid var(--line);
+    border-radius: 10px; font-family: 'Inter', sans-serif; margin-top: 14px;
+  }
+  input[type=email]:focus { outline: none; border-color: var(--brass); }
+  .btn {
+    background: var(--navy); color: white; border: none; padding: 13px 22px;
+    border-radius: 10px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 15px;
+    cursor: pointer; margin-top: 16px; width: 100%; transition: 0.15s;
+  }
+  .btn:hover { background: var(--navy-light); }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .btn.secondary { background: transparent; color: var(--navy); border: 1.5px solid var(--line); }
+  .btn.danger { background: var(--coral); }
+
+  /* Batch step */
+  .batch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .batch-tile {
+    background: white; border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 18px 14px; cursor: pointer; transition: 0.15s;
+  }
+  .batch-tile:hover { border-color: var(--brass); transform: translateY(-2px); }
+  .batch-tile .label { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; }
+  .batch-tile .desc { font-size: 12px; color: #777; margin-top: 4px; }
+
+  /* Wing filter tabs */
+  .wing-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; }
+  .wing-tabs button {
+    flex-shrink: 0; border: 1.5px solid var(--line); background: white; padding: 7px 14px;
+    border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--navy);
+  }
+  .wing-tabs button.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+  /* Scrollable room list */
+  .room-scroll {
+    max-height: 420px; overflow-y: auto; padding-right: 4px;
+  }
+  .room-scroll::-webkit-scrollbar { width: 6px; }
+  .room-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+  /* Door-plate room card */
+  .plate {
+    background: white; border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; transition: 0.15s;
+    border-left: 5px solid var(--sage);
+  }
+  .plate:hover { box-shadow: 0 3px 10px rgba(30,42,74,0.08); transform: translateX(2px); }
+  .plate.partial { border-left-color: var(--brass); }
+  .plate .roomno {
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 18px;
+    background: var(--cream); padding: 4px 10px; border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .plate .meta { font-size: 12px; color: #777; margin-top: 4px; }
+  .plate .tag {
+    font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 12px;
+  }
+  .tag.available { background: #e8f2e3; color: var(--sage); }
+  .tag.partial { background: #fbf0dc; color: #9c7422; }
+
+  #msg { margin-top: 14px; font-weight: 600; font-size: 14px; min-height: 18px; }
+  .success { color: var(--sage); }
+  .error { color: var(--coral); }
+
+  .my-booking-card {
+    background: white; border: 1px solid var(--line); border-radius: 14px; padding: 24px;
+    text-align: center;
+  }
+  .my-booking-card .roomno {
+    font-family: 'IBM Plex Mono', monospace; font-size: 34px; font-weight: 600;
+    background: var(--cream); display: inline-block; padding: 10px 24px; border-radius: 10px;
+    margin: 14px 0; box-shadow: inset 0 1px 4px rgba(0,0,0,0.08);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="trail">
+    <div id="tr1" class="done"></div><div id="tr2"></div><div id="tr3"></div>
+  </div>
+
+  <!-- STEP 1: EMAIL -->
+  <div id="step1" class="step active">
+    <h1>Room Allotment</h1>
+    <p class="sub">Enter your college email to get started</p>
+    <div class="card">
+      <label style="font-size:13px;font-weight:600;color:#555;">College email</label>
+      <input type="email" id="emailInput" placeholder="you@yourcollege.edu">
+      <button class="btn" onclick="goToBatch()">Continue</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: BATCH -->
+  <div id="step2" class="step">
+    <h1>Select your batch</h1>
+    <p class="sub">Choose the program you belong to</p>
+    <div class="batch-grid">
+      <div class="batch-tile" onclick="selectBatch('Batch2023')">
+        <div class="label">BTECH 2023</div><div class="desc">3rd year</div>
+      </div>
+      <div class="batch-tile" onclick="selectBatch('Batch2024')">
+        <div class="label">BTECH 2024</div><div class="desc">2nd year</div>
+      </div>
+      <div class="batch-tile" onclick="selectBatch('Batch2025')">
+        <div class="label">BTECH 2025</div><div class="desc">1st year</div>
+      </div>
+      <div class="batch-tile" onclick="selectBatch('MTECH2025')">
+        <div class="label">MTECH 2025</div><div class="desc">Postgrad</div>
+      </div>
+      <div class="batch-tile" onclick="selectBatch('PHD2025')">
+        <div class="label">PHD 2025</div><div class="desc">Doctoral</div>
+      </div>
+    </div>
+    <button class="btn secondary" onclick="goToStep(1)">Back</button>
+  </div>
+
+  <!-- STEP 3: ROOMS -->
+  <div id="step3" class="step">
+    <h1 id="batchTitle">Rooms</h1>
+    <p class="sub" id="userLine"></p>
+
+    <div id="myBookingView" style="display:none;">
+      <div class="my-booking-card">
+        <div style="font-size:13px;color:#777;">Your room</div>
+        <div class="roomno" id="myRoomNo"></div>
+        <button class="btn danger" onclick="doCancel()">Cancel Booking</button>
+      </div>
+    </div>
+
+    <div id="roomBrowseView">
+      <div class="wing-tabs" id="wingTabs"></div>
+      <div class="room-scroll" id="rooms">Loading...</div>
+    </div>
+
+    <p id="msg"></p>
+    <button class="btn secondary" onclick="goToStep(2)" style="margin-top:10px;">Change batch</button>
+  </div>
+</div>
+
+<script>
+  let email = '';
+  let batch = '';
+  let allRooms = [];
+  let activeWing = 'ALL';
+
+  function goToStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step' + n).classList.add('active');
+    document.getElementById('tr1').className = n >= 1 ? 'done' : '';
+    document.getElementById('tr2').className = n >= 2 ? 'done' : '';
+    document.getElementById('tr3').className = n >= 3 ? 'done' : '';
+  }
+
+  function goToBatch() {
+    var val = document.getElementById('emailInput').value.trim();
+    if (!val.includes('@')) {
+      alert('Please enter a valid email.');
+      return;
+    }
+    email = val;
+    goToStep(2);
+  }
+
+  function selectBatch(b) {
+    batch = b;
+    document.getElementById('batchTitle').innerText = b.replace(/([A-Z]+)(\d+)/, '$1 $2');
+    document.getElementById('userLine').innerText = email;
+    goToStep(3);
+    checkMyBooking();
+  }
+
+  function checkMyBooking() {
+    google.script.run.withSuccessHandler(function(res) {
+      if (res) {
+        document.getElementById('myBookingView').style.display = 'block';
+        document.getElementById('roomBrowseView').style.display = 'none';
+        document.getElementById('myRoomNo').innerText = res.roomNo;
+      } else {
+        document.getElementById('myBookingView').style.display = 'none';
+        document.getElementById('roomBrowseView').style.display = 'block';
+        loadRooms();
+      }
+    }).checkMyBookingInBatch(batch, email);
+  }
+function loadRooms() {
+  document.getElementById('rooms').innerText = 'Loading...';
+  google.script.run
+    .withSuccessHandler(function(rooms) {
+      allRooms = rooms;
+      renderWingTabs();
+      renderRooms();
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('rooms').innerHTML =
+        '<p style="color:#c0392b;">Error: ' + err.message + '</p>';
+    })
+    .getRooms(batch);
+}
+
+  function renderWingTabs() {
+    var wings = ['ALL'].concat([...new Set(allRooms.map(r => r.wing))].sort());
+    var el = document.getElementById('wingTabs');
+    el.innerHTML = '';
+    wings.forEach(function(w) {
+      var b = document.createElement('button');
+      b.innerText = w === 'ALL' ? 'All wings' : 'Wing ' + w;
+      b.className = (w === activeWing) ? 'active' : '';
+      b.onclick = function() { activeWing = w; renderWingTabs(); renderRooms(); };
+      el.appendChild(b);
+    });
+  }
+
+  function renderRooms() {
+    var div = document.getElementById('rooms');
+    div.innerHTML = '';
+    var list = activeWing === 'ALL' ? allRooms : allRooms.filter(r => r.wing === activeWing);
+    if (list.length === 0) {
+      div.innerHTML = '<p style="color:#999;text-align:center;padding:30px 0;">No rooms available here.</p>';
+      return;
+    }
+    list.forEach(function(r) {
+      var isPartial = r.status === 'Partially Booked';
+      var plate = document.createElement('div');
+      plate.className = 'plate' + (isPartial ? ' partial' : '');
+      plate.innerHTML =
+        '<div><div class="roomno">' + r.roomNo + '</div>' +
+        '<div class="meta">Wing ' + r.wing + ' &middot; Level ' + r.level + '</div></div>' +
+        '<span class="tag ' + (isPartial ? 'partial">1 spot left' : 'available">2 spots open') + '</span>';
+      plate.onclick = function() { confirmBooking(r.row, r.roomNo); };
+      div.appendChild(plate);
+    });
+  }
+
+  function confirmBooking(row, roomNo) {
+    if (!confirm('Confirm booking ' + roomNo + '?')) return;
+    setMsg('Booking...', '');
+    google.script.run.withSuccessHandler(function(res) {
+      setMsg(res.message, res.success ? 'success' : 'error');
+      checkMyBooking();
+    }).bookRoom(batch, row, email);
+  }
+
+  function doCancel() {
+    if (!confirm('Cancel your booking?')) return;
+    google.script.run.withSuccessHandler(function(res) {
+      setMsg(res.message, res.success ? 'success' : 'error');
+      checkMyBooking();
+    }).cancelBooking(batch, email);
+  }
+
+  function setMsg(text, cls) {
+    var el = document.getElementById('msg');
+    el.innerText = text; el.className = cls;
+  }
+</script>
+</body>
+</html>
